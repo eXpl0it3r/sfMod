@@ -116,7 +116,7 @@ bool sfmod::Mod::loadFromFile(const std::string& filename)
   std::string data;
 
   std::ifstream file;
-  file.open(filename, std::ios::binary);
+  file.open(filename.c_str(), std::ios::binary);
   if (!file.is_open()) {
     setError("Failed to load module.");
     return false;

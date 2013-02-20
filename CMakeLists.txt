@@ -1,66 +1,83 @@
-cmake_minimum_required (VERSION 2.6)
-project (sfMod)
+cmake_minimum_required( VERSION 2.8 )
 
-set(INCROOT  ${PROJECT_SOURCE_DIR}/include)
-set(SRCROOT  ${PROJECT_SOURCE_DIR}/src)
-set(SRCSFMOD ${SRCROOT}/sfMod)
+project( sfMod )
 
-set(SRCLIBMODPLUG ${PROJECT_SOURCE_DIR}/libmodplug)
+if( NOT CMAKE_BUILD_TYPE )
+	set( CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE )
+endif()
 
-include_directories(${INCROOT})
-include_directories(${SRCLIBMODPLUG})
-include_directories(${SRCLIBMODPLUG}/libmodplug)
+set( BUILD_SHARED false CACHE BOOL "Build a shared library." )
 
-set(CMAKE_DEBUG_POSTFIX "_d")
+if( BUILD_SHARED )
+	set( LIB_TYPE SHARED )
+else()
+	set( LIB_TYPE STATIC )
+endif()
 
-set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/lib")
+set( SFML_COMPONENTS ${SFML_COMPONENTS} AUDIO SYSTEM )
 
-add_library(sfMod STATIC
-              ${INCROOT}/sfMod.h
-              ${SRCSFMOD}/sfMod.cpp
-              ${SRCLIBMODPLUG}/modplug.h
-              ${SRCLIBMODPLUG}/load_pat.h
-              ${SRCLIBMODPLUG}/tables.h
-              ${SRCLIBMODPLUG}/libmodplug/it_defs.h
-              ${SRCLIBMODPLUG}/libmodplug/sndfile.h
-              ${SRCLIBMODPLUG}/libmodplug/stdafx.h
-              ${SRCLIBMODPLUG}/sndmix.cpp
-              ${SRCLIBMODPLUG}/fastmix.cpp
-              ${SRCLIBMODPLUG}/load_669.cpp
-              ${SRCLIBMODPLUG}/load_abc.cpp
-              ${SRCLIBMODPLUG}/load_amf.cpp
-              ${SRCLIBMODPLUG}/load_ams.cpp
-              ${SRCLIBMODPLUG}/load_dbm.cpp
-              ${SRCLIBMODPLUG}/load_dmf.cpp
-              ${SRCLIBMODPLUG}/load_dsm.cpp
-              ${SRCLIBMODPLUG}/load_far.cpp
-              ${SRCLIBMODPLUG}/load_it.cpp
-              ${SRCLIBMODPLUG}/load_j2b.cpp
-              ${SRCLIBMODPLUG}/load_mdl.cpp
-              ${SRCLIBMODPLUG}/load_med.cpp
-              ${SRCLIBMODPLUG}/load_mid.cpp
-              ${SRCLIBMODPLUG}/load_mod.cpp
-              ${SRCLIBMODPLUG}/load_mt2.cpp
-              ${SRCLIBMODPLUG}/load_mtm.cpp
-              ${SRCLIBMODPLUG}/load_okt.cpp
-              ${SRCLIBMODPLUG}/load_pat.cpp
-              ${SRCLIBMODPLUG}/load_psm.cpp
-              ${SRCLIBMODPLUG}/load_ptm.cpp
-              ${SRCLIBMODPLUG}/load_s3m.cpp
-              ${SRCLIBMODPLUG}/load_stm.cpp
-              ${SRCLIBMODPLUG}/load_ult.cpp
-              ${SRCLIBMODPLUG}/load_umx.cpp
-              ${SRCLIBMODPLUG}/load_wav.cpp
-              ${SRCLIBMODPLUG}/load_xm.cpp
-              ${SRCLIBMODPLUG}/mmcmp.cpp
-              ${SRCLIBMODPLUG}/modplug.cpp
-              ${SRCLIBMODPLUG}/snd_dsp.cpp
-              ${SRCLIBMODPLUG}/snd_flt.cpp
-              ${SRCLIBMODPLUG}/snd_fx.cpp
-              ${SRCLIBMODPLUG}/sndfile.cpp
-            )
-            
-add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
-            
-install (TARGETS sfMod DESTINATION lib)
-install (FILES ${INCROOT}/sfMod.h DESTINATION include)
+find_package( ModPlug REQUIRED )
+find_package( SFML 2.0 REQUIRED COMPONENTS ${SFML_COMPONENTS} )
+
+set( INC_DIR "include" )
+set( SRC_DIR "src" )
+
+set(
+	SOURCES
+	${INC_DIR}/sfMod.h
+	${INC_DIR}/sfMod/Error.h
+	${SRC_DIR}/sfMod/sfMod.cpp
+)
+
+include_directories( ${INC_DIR} )
+include_directories( ${INC_DIR}/sfMod )
+
+include_directories( ${ModPlug_INCLUDE_DIR} )
+include_directories( ${SFML_INCLUDE_DIR} )
+
+add_library( sfMod ${LIB_TYPE} ${SOURCES} )
+
+target_link_libraries( sfMod ${ModPlug_LIBRARY} )
+target_link_libraries( sfMod ${SFML_AUDIO_LIBRARY} )
+target_link_libraries( sfMod ${SFML_SYSTEM_LIBRARY} )
+
+if( BUILD_SHARED )
+	set_target_properties( sfMod PROPERTIES DEBUG_POSTFIX -d )
+else()
+	set_target_properties( sfMod PROPERTIES DEBUG_POSTFIX -s-d )
+	set_target_properties( sfMod PROPERTIES RELEASE_POSTFIX -s )
+	set_target_properties( sfMod PROPERTIES MINSIZEREL_POSTFIX -s )
+endif()
+
+# Installing
+
+install(
+	DIRECTORY include
+	DESTINATION .
+)
+
+install(
+	FILES license.txt
+	DESTINATION .
+)
+
+install(
+	FILES readme.txt
+	DESTINATION .
+)
+
+if(WIN32)
+	install(
+		TARGETS sfMod
+		RUNTIME DESTINATION bin
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib
+	)
+else()
+	install(
+		TARGETS sfMod
+		RUNTIME DESTINATION lib
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib
+	)
+endif()
